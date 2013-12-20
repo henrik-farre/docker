@@ -8,7 +8,8 @@ if [[ $MAILCATCHER_IS_RUNNING == 0 ]]; then
   mailcatcher --smtp-ip 172.17.42.1
 fi
 
-CONTAINER_EXIST=`docker ps -a | cut -c131- | grep -c $NAME`
+# Not the prettiest way, but the output changes to much to cut -c is usefull, and using word delimiters in grep also fails if the name is used in the image name
+CONTAINER_EXIST=`docker ps -a | grep -c " $NAME "`
 if [[ $CONTAINER_EXIST > 0 ]]; then
   echo "Restarting docker container $NAME"
   docker restart $NAME
