@@ -1,0 +1,23 @@
+version: '2'
+services:
+  php-dev-debian-jessie:
+    container_name: php-dev-debian-jessie
+    hostname: php-dev-debian-jessie
+    build: ./php-dev-debian-jessie
+    image: php-dev:debian-jessie
+    volumes:
+      - ../sites:/var/www
+      - ../vhosts:/etc/apache2/sites-enabled
+    volumes_from:
+      - php-dev-data-busybox
+    ports:
+      - "80:80"
+      - "8025:8025"
+    depends_on:
+      - php-dev-data-busybox
+  php-dev-data-busybox:
+    container_name: php-dev-data-busybox
+    build: ./php-dev-data-busybox
+    image: php-dev-data:busybox
+    volumes:
+      - /var/lib/mysql

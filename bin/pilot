@@ -1,0 +1,50 @@
+#!/bin/bash
+set -o nounset
+set -o errexit
+set -o pipefail
+IFS=$'\n\t'
+
+source "${BASH_SOURCE%/*}/includes/utils.sh"
+
+# Get absolute path to this script, resolves symlinks
+READ_LINK=$(readlink -m "$0")
+# Find working dir by stripping of bin/pilot
+WORK_DIR=${READ_LINK%bin/pilot}
+CONTAINER_DIR="${WORK_DIR}/containers"
+
+ACTION="${1:-}"
+
+if [[ -z "$ACTION" ]]; then
+  msg_error "Missing argument"
+  exit 1
+fi
+
+case "$ACTION" in
+  export)
+    CONTAINER_NAME=${2:-}
+    if [[ -z "$CONTAINER_NAME" ]]; then
+      msg_error "export requires an container name"
+      exit 1
+    fi
+    if docker-check-existing "$CONTAINER_NAME"; then
+      docker-export-container "$CONTAINER_NAME"
+    else
+      msg_error "No container with name $CONTAINER_NAME"
+    fi
+    ;;
+  start)
+    CONTAINER_NAME=${2:-}
+    if [[ -z "$CONTAINER_NAME" ]]; then
+      msg_error "start requires an container name"
+      exit 1
+    fi
+
+    if [[ ! -f ${WORK_DIR}/.setup-ok ]]; then
+      msg_info "Starting setup"
+      docker-setup
+    fi
+
+    docker-stop-all
+    docker-start "$CONTAINER_NAME"
+    ;;
+esac
