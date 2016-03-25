@@ -1,1 +1,4 @@
 .setup-ok
+sites/*
+vhosts/*
+databases/*
