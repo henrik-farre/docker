@@ -11,6 +11,25 @@ function msg_error {
   echo -e "\e[00;31m${1}\e[00m"
 }
 
+function docker-get-running-container-name() {
+  local CONTAINER
+  CONTAINER=$(docker inspect --format '{{ .Name }}' $(docker ps -q | head -1))
+  echo "${CONTAINER#/}"
+}
+
+function docker-exec-in-container() {
+  local CONTAINER_NAME
+  local ACTION
+  local ARGS
+  CONTAINER_NAME=$1
+  shift
+  ACTION=$1
+  shift
+  ARGS=$*
+
+  docker exec -ti "$CONTAINER_NAME" /var/www/docker-cmd "$ACTION" "$ARGS"
+}
+
 function docker-export-container() {
   local IMAGE
   IMAGE=$1
@@ -68,6 +87,4 @@ function docker-start() {
   cd "${CONTAINER_DIR}"
 
   docker-compose up "$CONTAINER_NAME"
-
-  # docker run -d -h "$CONTAINER_SETTING_HOSTNAME" -p 80:80 -p 8025:8025 --volumes-from "$CONTAINER_SETTING_DATA_VOLUME" -v "$WWW_DIR":/var/www -v "$VHOST_DIR":/etc/apache2/sites-enabled --name "$CONTAINER_SETTING_NAME" "$CONTAINER_SETTING_IMAGE"
 }
