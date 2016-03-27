@@ -13,62 +13,61 @@ XDEBUG_PORT=9000
 # Check local docker0 interface if Vdebug can't connect: ip addr show docker0
 
 # Default config
-RUN echo tzdata tzdata/Areas select Europe | debconf-set-selections; \
-  echo tzdata tzdata/Zones/Europe select Copenhagen | debconf-set-selections; \
-  echo mysql-server mysql-server/root_password password ${MYSQL_PASS} | debconf-set-selections;\
-  echo mysql-server mysql-server/root_password_again password ${MYSQL_PASS} | debconf-set-selections;\
-  echo phpmyadmin phpmyadmin/app-password-confirm password | debconf-set-selections;\
-  echo phpmyadmin phpmyadmin/dbconfig-install boolean true | debconf-set-selections;\
-  echo phpmyadmin phpmyadmin/mysql/admin-pass password ${MYSQL_PASS} | debconf-set-selections;\
-  echo phpmyadmin phpmyadmin/mysql/app-pass password ${MYSQL_PASS} | debconf-set-selections;\
-  echo phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2 | debconf-set-selections;
+RUN echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections \
+ && echo 'tzdata tzdata/Zones/Europe select Copenhagen' | debconf-set-selections \
+ && echo 'mysql-server mysql-server/root_password password ${MYSQL_PASS}' | debconf-set-selections \
+ && echo 'mysql-server mysql-server/root_password_again password ${MYSQL_PASS}' | debconf-set-selections \
+ && echo 'phpmyadmin phpmyadmin/app-password-confirm password' | debconf-set-selections \
+ && echo 'phpmyadmin phpmyadmin/dbconfig-install boolean true' | debconf-set-selections \
+ && echo 'phpmyadmin phpmyadmin/mysql/admin-pass password ${MYSQL_PASS}' | debconf-set-selections \
+ && echo 'phpmyadmin phpmyadmin/mysql/app-pass password ${MYSQL_PASS}' | debconf-set-selections \
+ && echo 'phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2' | debconf-set-selections \
+ && echo 'locales locales/locales_to_be_generated multiselect     en_US.UTF-8 UTF-8, en_GB.UTF-8 UTF-8, da_DK.UTF-8 UTF-8' | debconf-set-selections \
+ && echo 'locales locales/default_environment_locale      select  da_DK.UTF-8' | debconf-set-selections
 
 # Update and install
 # Python and graphviz for webgrind
 # ca-certificates else curl will fail on https
-RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade;\
-  apt-get -q -y --no-install-recommends install \
-    ca-certificates \
-    ssmtp \
-    locales \
-    apache2 \
-    mariadb-server-10.0 \
-    phpmyadmin \
-    libapache2-mod-php5 \
-    php-apc \
-    php5-tidy \
-    php5-curl \
-    php-pear \
-    php5-xdebug \
-    curl \
-    php5-mcrypt \
-    php5-sqlite \
-    imagemagick \
-    php5-sybase \
-    php5-ldap \
-    python \
-    graphviz \
-&& apt-get clean && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/*
-
-# Locales
-RUN sed -i -e 's/# da_DK.UTF-8/da_DK.UTF-8/' /etc/locale.gen;\
-  locale-gen
+RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
+ && apt-get -q -y --no-install-recommends install \
+      ca-certificates \
+      ssmtp \
+      locales \
+      apache2 \
+      mariadb-server-10.0 \
+      phpmyadmin \
+      libapache2-mod-php5 \
+      php-apc \
+      php5-tidy \
+      php5-curl \
+      php-pear \
+      php5-xdebug \
+      curl \
+      php5-mcrypt \
+      php5-sqlite \
+      imagemagick \
+      php5-sybase \
+      php5-ldap \
+      python \
+      graphviz \
+ && apt-get clean \
+ && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/* \
+ && rm -rf /usr/share/man/?? /usr/share/man/??_*
 
 # Apache
-RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.conf;\
-  a2enmod rewrite;\
-  a2enmod php5;\
-  a2enmod headers
+RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.conf \
+  && a2enmod rewrite \
+  && a2enmod php5 \
+  && a2enmod headers \
+  && a2enmod expires
 
-# Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
-
-# Drush for Drupal
+# Composer and Drush
 # http://docs.drush.org/en/master/install/
-RUN curl -O http://files.drush.org/drush.phar \
-    && php drush.phar core-status \
-    && chmod +x drush.phar \
-    && mv drush.phar /usr/bin/drush
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
+ && curl -O http://files.drush.org/drush.phar \
+ && php drush.phar core-status \
+ && chmod +x drush.phar \
+ && mv drush.phar /usr/bin/drush
 
 # PHP and Xdebug settings
 RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php.ini \
