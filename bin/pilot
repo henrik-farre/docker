@@ -10,7 +10,8 @@ source "${BASH_SOURCE%/*}/includes/utils.sh"
 READ_LINK=$(readlink -m "$0")
 # Find working dir by stripping of bin/pilot
 WORK_DIR=${READ_LINK%bin/pilot}
-CONTAINER_DIR="${WORK_DIR}/containers"
+CONTAINER_DIR="${WORK_DIR}containers"
+DATABASE_DIR="${WORK_DIR}databases"
 
 ACTION="${1:-}"
 
@@ -23,7 +24,7 @@ case "$ACTION" in
   export)
     CONTAINER_NAME=${2:-}
     if [[ -z "$CONTAINER_NAME" ]]; then
-      msg_error "export requires an container name"
+      msg_error "Export requires an container name"
       exit 1
     fi
     if docker-check-existing "$CONTAINER_NAME"; then
@@ -35,7 +36,7 @@ case "$ACTION" in
   start)
     CONTAINER_NAME=${2:-}
     if [[ -z "$CONTAINER_NAME" ]]; then
-      msg_error "start requires an container name"
+      msg_error "Start requires an container name"
       exit 1
     fi
 
@@ -46,5 +47,24 @@ case "$ACTION" in
 
     docker-stop-all
     docker-start "$CONTAINER_NAME"
+    ;;
+  db-import)
+    DATABASE_NAME=${2:-}
+    if [[ -z "$DATABASE_NAME" ]]; then
+      msg_error "db-import requires an database name"
+      exit 1
+    fi
+
+    if [[ ! -f "${DATABASE_DIR}/${DATABASE_NAME}.sql.gz" ]]; then
+      msg_error "No database dump exists in ${DATABASE_DIR}/${DATABASE_NAME}.sql.gz"
+      exit 1
+    fi
+
+    CONTAINER_NAME=$(docker-get-running-container-name)
+
+    docker-exec-in-container "$CONTAINER_NAME" db-import "$DATABASE_NAME"
+    ;;
+  *)
+    msg_warning "Unknown action $ACTION"
     ;;
 esac
