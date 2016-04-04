@@ -64,6 +64,14 @@ case "$ACTION" in
 
     docker-exec-in-container "$CONTAINER_NAME" db-import "$DATABASE_NAME"
     ;;
+  apache-reload)
+    CONTAINER_NAME=$(docker-get-running-container-name)
+    docker-exec-in-container "$CONTAINER_NAME" apache-reload
+    ;;
+  shell)
+    CONTAINER_NAME=$(docker-get-running-container-name)
+    docker exec -ti "$CONTAINER_NAME" bash
+    ;;
   *)
     msg_warning "Unknown action $ACTION"
     ;;
