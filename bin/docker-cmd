@@ -1,0 +1,45 @@
+#!/bin/bash
+set -o nounset
+set -o errexit
+set -o pipefail
+IFS=$'\n\t'
+
+DATABASE_DIR="/var/databases"
+
+source utils.sh
+
+ACTION="${1:-}"
+
+if [[ -z "$ACTION" ]]; then
+  msg_error "Missing argument"
+  exit 1
+fi
+
+case "$ACTION" in
+  db-import)
+    DATABASE_NAME=${2:-}
+    if [[ -z "$DATABASE_NAME" ]]; then
+      msg_error "db-import requires an database name"
+      exit 1
+    fi
+
+    if [[ ! -f "${DATABASE_DIR}/${DATABASE_NAME}.sql.gz" ]]; then
+      msg_error "No database dump exists in ${DATABASE_DIR}/${DATABASE_NAME}.sql.gz"
+      exit 1
+    fi
+
+    if ! mysql -e "use $DATABASE_NAME" &>/dev/null; then
+      msg_info "Creating db with name $DATABASE_NAME"
+      mysql -e "CREATE DATABASE \`$DATABASE_NAME\`"
+    fi
+
+    msg_info "Importing..."
+    gunzip -c "${DATABASE_DIR}/${DATABASE_NAME}.sql.gz" | mysql "$DATABASE_NAME"
+    ;;
+  apache-reload)
+    service apache2 reload
+    ;;
+  *)
+    msg_warning "Unknown action $ACTION"
+    ;;
+esac
