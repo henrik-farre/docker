@@ -49,7 +49,7 @@ if (!empty($dbname)) {
     /* Authentication type */
     $cfg['Servers'][$i]['auth_type'] = 'config';
     $cfg['Servers'][$i]['user'] = 'root';
-    $cfg['Servers'][$i]['password'] = 'mysql_root_password';
+    $cfg['Servers'][$i]['password'] = 'root';
     /* Server parameters */
     if (empty($dbserver)) $dbserver = 'localhost';
     $cfg['Servers'][$i]['host'] = $dbserver;
