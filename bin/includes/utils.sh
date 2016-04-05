@@ -88,3 +88,7 @@ function docker-start() {
 
   docker-compose up "$CONTAINER_NAME"
 }
+
+function usage() {
+  echo "pilotboat [ACTION]"
+}

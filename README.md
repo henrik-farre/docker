@@ -2,10 +2,10 @@
 
 ## Setup
 
-Include bin/ in $PATH or run directly bin/pilot directly.
+Include bin/ in $PATH or run directly bin/pilotboat directly.
 
-The pilot command will build the images and start the containers on first run
+The pilotboat command will build the images and start the containers on first run
 
 ## Starting
 
-bin/pilot start php-dev-debian-jessie
+bin/pilotboat start php-dev-debian-jessie

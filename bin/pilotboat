@@ -8,8 +8,8 @@ source "${BASH_SOURCE%/*}/includes/utils.sh"
 
 # Get absolute path to this script, resolves symlinks
 READ_LINK=$(readlink -m "$0")
-# Find working dir by stripping of bin/pilot
-WORK_DIR=${READ_LINK%bin/pilot}
+# Find working dir by stripping of bin/pilotboat
+WORK_DIR=${READ_LINK%bin/pilotboat}
 CONTAINER_DIR="${WORK_DIR}containers"
 DATABASE_DIR="${WORK_DIR}databases"
 
@@ -17,6 +17,7 @@ ACTION="${1:-}"
 
 if [[ -z "$ACTION" ]]; then
   msg_error "Missing argument"
+  usage
   exit 1
 fi
 
@@ -74,5 +75,6 @@ case "$ACTION" in
     ;;
   *)
     msg_warning "Unknown action $ACTION"
+    usage
     ;;
 esac
