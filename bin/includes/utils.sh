@@ -93,9 +93,34 @@ function usage() {
   echo "pilotboat [ACTION]"
   echo ""
   echo "Avaliable actions:"
-  echo -e "\texport\t\t: Exports a container to a tar file"
   echo -e "\tstart\t\t: Starts a container, see container dir for avaliable containers"
+  echo -e "\tsite-create\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR"
   echo -e "\tdb-import\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
   echo -e "\tapache-reload\t: Restarts Apache in the container, for example to load a new virtual host"
   echo -e "\tshell\t\t: Executes an interactive shell inside the container"
+  echo -e "\texport\t\t: Exports a container to a tar file"
+}
+
+function site-create() {
+  local SITE_NAME
+  SITE_NAME=$1
+  if [[ -d "$SITE_DIR/$SITE_NAME" ]]; then
+    msg_error "$SITE_DIR/$SITE_NAME exists"
+    exit 1
+  fi
+
+  if [[ -f "$VHOST_DIR/${SITE_NAME}.conf" ]]; then
+    msg_error "$VHOST_DIR/${SITE_NAME}.conf exists"
+    exit 1
+  fi
+
+  mkdir -p "${SITE_DIR}/${SITE_NAME}"/{public_html,logs,sessions,upload}
+  sed -re "s/\[DOMAIN.TLD\]/$SITE_NAME/" bin/includes/vhost.tpl > "$VHOST_DIR/${SITE_NAME}.conf"
+  apache-reload
+}
+
+function apache-reload() {
+  local CONTAINER_NAME
+  CONTAINER_NAME=$(docker-get-running-container-name)
+  docker-exec-in-container "$CONTAINER_NAME" apache-reload
 }

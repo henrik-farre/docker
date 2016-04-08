@@ -12,6 +12,8 @@ READ_LINK=$(readlink -m "$0")
 WORK_DIR=${READ_LINK%bin/pilotboat}
 CONTAINER_DIR="${WORK_DIR}containers"
 DATABASE_DIR="${WORK_DIR}databases"
+SITE_DIR="${WORK_DIR}sites"
+VHOST_DIR="${WORK_DIR}vhosts"
 
 ACTION="${1:-}"
 
@@ -66,8 +68,15 @@ case "$ACTION" in
     docker-exec-in-container "$CONTAINER_NAME" db-import "$DATABASE_NAME"
     ;;
   apache-reload)
-    CONTAINER_NAME=$(docker-get-running-container-name)
-    docker-exec-in-container "$CONTAINER_NAME" apache-reload
+    apache-reload
+    ;;
+  site-create)
+    SITE_NAME=${2:-}
+    if [[ -z "$SITE_NAME" ]]; then
+      msg_error "site-create requires a sitename, e.g. domain.tld"
+      exit 1
+    fi
+    site-create "$SITE_NAME"
     ;;
   shell)
     CONTAINER_NAME=$(docker-get-running-container-name)
