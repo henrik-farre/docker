@@ -16,7 +16,7 @@ DATABASE_DIR="${WORK_DIR}databases"
 ACTION="${1:-}"
 
 if [[ -z "$ACTION" ]]; then
-  msg_error "Missing argument"
+  msg_error "Missing action"
   usage
   exit 1
 fi

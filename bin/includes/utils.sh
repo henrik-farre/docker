@@ -91,4 +91,11 @@ function docker-start() {
 
 function usage() {
   echo "pilotboat [ACTION]"
+  echo ""
+  echo "Avaliable actions:"
+  echo -e "\texport\t\t: Exports a container to a tar file"
+  echo -e "\tstart\t\t: Starts a container, see container dir for avaliable containers"
+  echo -e "\tdb-import\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
+  echo -e "\tapache-reload\t: Restarts Apache in the container, for example to load a new virtual host"
+  echo -e "\tshell\t\t: Executes an interactive shell inside the container"
 }
