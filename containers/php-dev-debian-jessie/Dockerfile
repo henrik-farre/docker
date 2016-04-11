@@ -47,6 +47,7 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
       imagemagick \
       php5-sybase \
       php5-ldap \
+      php5-gd \
       python \
       graphviz \
  && apt-get clean \
@@ -54,11 +55,13 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
  && rm -rf /usr/share/man/?? /usr/share/man/??_*
 
 # Apache
+# Default virtual host is put in conf-enabled as sites-enabled is shared with the host
 RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.conf \
   && a2enmod rewrite \
   && a2enmod php5 \
   && a2enmod headers \
-  && a2enmod expires
+  && a2enmod expires \
+  && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf
 
 # Composer and Drush
 # http://docs.drush.org/en/master/install/
@@ -69,6 +72,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ 
  && mv drush.phar /usr/bin/drush
 
 # PHP and Xdebug settings
+# max_nesting_level is needed by Drupal 8
 RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php.ini \
     && sed -i -e 's/upload_max_filesize = 2M/upload_max_filesize = 200M/' /etc/php5/apache2/php.ini \
     && sed -i -e 's/;date.timezone =/date.timezone = Europe\/Copenhagen/' /etc/php5/apache2/php.ini \
@@ -80,7 +84,8 @@ RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php
     echo xdebug.profiler_enable=0 >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.profiler_enable_trigger=1 >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.profiler_output_name=cachegrind.out.%t.%p >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
-    echo xdebug.profiler_output_dir=/tmp/ >> /etc/php5/apache2/conf.d/20-xdebug.ini;
+    echo xdebug.profiler_output_dir=/tmp/ >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
+    echo xdebug.max_nesting_level=256 >> /etc/php5/apache2/conf.d/20-xdebug.ini;
 
 # Webgrind
 RUN curl -SL https://github.com/alpha0010/webgrind/archive/${WEBGRIND_VERSION}.tar.gz \
@@ -101,9 +106,8 @@ COPY containers/php-dev-debian-jessie/add-files/root.my.cnf /root/.my.cnf
 COPY containers/php-dev-debian-jessie/add-files/phpmyadmin-config.inc.php /etc/phpmyadmin/config.inc.php
 COPY containers/php-dev-debian-jessie/add-files/dot.bashrc /root/.bashrc
 COPY containers/php-dev-debian-jessie/add-files/startup-in-container.sh /sbin/start.sh
-# COPY containers/php-dev-debian-jessie/add-files/debian.cnf /etc/mysql/debian.cnf
 COPY containers/php-dev-debian-jessie/add-files/mysql-setup.sql /opt/mysql-setup.sql
-COPY containers/php-dev-debian-jessie/add-files/webgrind.conf /etc/apache2/conf.d/webgrind.conf
+COPY containers/php-dev-debian-jessie/add-files/webgrind.conf /etc/apache2/conf-enabled/webgrind.conf
 COPY bin/docker-cmd /usr/bin/docker-cmd
 COPY bin/includes/utils.sh /usr/bin/utils.sh
 
