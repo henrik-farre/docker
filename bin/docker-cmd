@@ -39,6 +39,10 @@ case "$ACTION" in
   apache-reload)
     service apache2 reload
     ;;
+  site-create-drupal)
+    site-create-drupal "$2" "$3"
+    site-fix-permissions "$2"
+    ;;
   *)
     msg_warning "Unknown action $ACTION"
     ;;

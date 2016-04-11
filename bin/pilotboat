@@ -72,11 +72,16 @@ case "$ACTION" in
     ;;
   site-create)
     SITE_NAME=${2:-}
+    SITE_TYPE=${3:-}
     if [[ -z "$SITE_NAME" ]]; then
       msg_error "site-create requires a sitename, e.g. domain.tld"
       exit 1
     fi
-    site-create "$SITE_NAME"
+    if [[ "$SITE_NAME" = *[[:space:]]* ]]; then
+      msg_error "Please no spaces in domain name"
+      exit 1
+    fi
+    site-create "$SITE_NAME" "$SITE_TYPE"
     ;;
   shell)
     CONTAINER_NAME=$(docker-get-running-container-name)
