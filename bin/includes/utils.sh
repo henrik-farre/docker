@@ -76,12 +76,12 @@ function docker-stop-all() {
 }
 
 function docker-check-existing() {
- local NAME
- local RUNNING
- NAME=$1
- # Returns true if running, false if not, and exit status is 1 if no container with $NAME exists
- RUNNING=$(docker inspect --format="{{ .State.Running }}" "$NAME" 2> /dev/null)
- return $?
+  local NAME
+  local RUNNING
+  NAME=$1
+  # Returns true if running, false if not, and exit status is 1 if no container with $NAME exists
+  RUNNING=$(docker inspect --format="{{ .State.Running }}" "$NAME" 2> /dev/null)
+  return $?
 }
 
 function docker-start() {
@@ -189,3 +189,4 @@ function apache-reload() {
   CONTAINER_NAME=$(docker-get-running-container-name)
   docker-exec-in-container "$CONTAINER_NAME" apache-reload
 }
+
