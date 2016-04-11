@@ -29,9 +29,8 @@ function docker-exec-in-container() {
   shift
   ACTION=$1
   shift
-  ARGS=$*
 
-  docker exec -ti "$CONTAINER_NAME" /usr/bin/docker-cmd "$ACTION" "$ARGS"
+  docker exec -ti "$CONTAINER_NAME" /usr/bin/docker-cmd "$ACTION" $*
 }
 
 function docker-export-container() {
