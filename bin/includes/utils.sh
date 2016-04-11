@@ -11,6 +11,10 @@ function msg_error {
   echo -e "\e[00;31m${1}\e[00m"
 }
 
+function msg_debug {
+  echo -e "\e[00;45m${1}\e[00m"
+}
+
 function docker-get-running-container-name() {
   local CONTAINER
   CONTAINER=$(docker inspect --format '{{ .Name }}' $(docker ps -q | head -1))
