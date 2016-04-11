@@ -1,5 +1,7 @@
 # TODO
 
+Check if container is running before issuing commands
+
 ## Pilot commands
 
 ### Wordpress
