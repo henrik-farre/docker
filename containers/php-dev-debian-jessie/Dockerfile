@@ -64,13 +64,18 @@ RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.co
   && a2enmod expires \
   && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf
 
-# Composer and Drush
+# Composer, Drush, WP-cli
 # http://docs.drush.org/en/master/install/
+# http://wp-cli.org/
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
  && curl -O http://files.drush.org/drush.phar \
  && php drush.phar core-status \
  && chmod +x drush.phar \
- && mv drush.phar /usr/bin/drush
+ && mv drush.phar /usr/bin/drush \
+ && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+ && php wp-cli.phar --info --allow-root \
+ && chmod +x wp-cli.phar \
+ && mv wp-cli.phar /usr/bin/wp
 
 # PHP and Xdebug settings
 # max_nesting_level is needed by Drupal 8
