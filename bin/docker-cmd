@@ -29,8 +29,7 @@ case "$ACTION" in
     fi
 
     if ! mysql -e "use $DATABASE_NAME" &>/dev/null; then
-      msg_info "Creating db with name $DATABASE_NAME"
-      mysql -e "CREATE DATABASE \`$DATABASE_NAME\`"
+      db-create "$DATABASE_NAME"
     fi
 
     msg_info "Importing..."
@@ -45,6 +44,10 @@ case "$ACTION" in
     ;;
   site-create-wordpress)
     site-create-wordpress "$2"
+    site-fix-permissions "$2"
+    ;;
+  site-create-prestashop)
+    site-create-prestashop "$2"
     site-fix-permissions "$2"
     ;;
   *)

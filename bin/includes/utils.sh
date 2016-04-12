@@ -97,7 +97,7 @@ function usage() {
   echo ""
   echo "Avaliable actions:"
   echo -e "\tstart\t\t: Starts a container, see container dir for avaliable containers"
-  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress"
+  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress or Prestashop"
   echo -e "\tdb-import\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
   echo -e "\tapache-reload\t: Restarts Apache in the container, for example to load a new virtual host"
   echo -e "\tshell\t\t: Executes an interactive shell inside the container"
@@ -120,7 +120,7 @@ function site-create() {
   fi
 
   if [[ ! -z "$SITE_TYPE" ]]; then
-    declare -A SUPPORTED_SITE_TYPES=( [DRUPAL7]=1 [DRUPAL8]=1 [WORDPRESS]=1 )
+    declare -A SUPPORTED_SITE_TYPES=( [DRUPAL7]=1 [DRUPAL8]=1 [WORDPRESS]=1 [PRESTASHOP]=1 )
     if [[ ! ${SUPPORTED_SITE_TYPES[${SITE_TYPE^^}]} ]]; then
       msg_error "Unknown site type $SITE_TYPE"
       exit 1
@@ -144,6 +144,10 @@ function site-create() {
       WORDPRESS)
         docker-exec-in-container "$CONTAINER_NAME" site-create-wordpress "$SITE_NAME"
         ;;
+      PRESTASHOP)
+        prestashop-download-latest "$SITE_NAME"
+        docker-exec-in-container "$CONTAINER_NAME" site-create-prestashop "$SITE_NAME"
+        ;;
     esac
   fi
   apache-reload
@@ -156,7 +160,7 @@ function site-create-drupal() {
     SITE_NAME=${1}
     # Default to version 7
     DRUPAL_VERSION=${2:-7}
-    DATABASE_NAME=$(get-clean-db-name "$SITE_NAME")
+    DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
     cd "/var/www/${SITE_NAME}/"
     rmdir public_html
     msg_info "Creating Drupal ${DRUPAL_VERSION} site"
@@ -176,7 +180,7 @@ function site-create-wordpress() {
   local SITE_NAME
   local DATABASE_NAME
   SITE_NAME=${1}
-  DATABASE_NAME=$(get-clean-db-name "$SITE_NAME")
+  DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
   cd "/var/www/${SITE_NAME}/public_html"
   msg_info "Creating Wordpress site"
   wp core download --allow-root
@@ -186,6 +190,19 @@ function site-create-wordpress() {
   wp core install --url="$SITE_NAME" --title="$SITE_NAME" --admin_name=admin --admin_password=admin --admin_email="admin@${SITE_NAME}" --allow-root
   msg_info "Removing wp cli cache"
   rm -rf /root/.wp-cli/cache
+}
+
+function site-create-prestashop() {
+  local SITE_NAME
+  local DATABASE_NAME
+  SITE_NAME=${1}
+  DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+  cd "/var/www/${SITE_NAME}/public_html/install"
+  msg_info "Creating Prestashop site"
+  db-create "$DATABASE_NAME"
+  php index_cli.php --domain="$SITE_NAME" --db_server=localhost --db_name="$DATABASE_NAME" --db_user=root --db_password=root --email="admin@${SITE_NAME}"
+  cd ..
+  rm -rf install
 }
 
 function site-create-vhost() {
@@ -215,7 +232,20 @@ function apache-reload() {
   docker-exec-in-container "$CONTAINER_NAME" apache-reload
 }
 
-function get-clean-db-name() {
+function prestashop-download-latest() {
+  msg_info "Downloading latest release of Prestashop"
+  local SITE_NAME
+  SITE_NAME=$1
+  cd "${WORK_DIR}sites/${SITE_NAME}"
+  rmdir public_html
+  # From http://stackoverflow.com/questions/24085978/github-url-for-latest-release-of-the-download-file because providing a direct link is hard...
+  curl -o latest.zip -L $(curl -s https://api.github.com/repos/PrestaShop/PrestaShop/releases/latest | grep 'browser_' | cut -d\" -f4)
+  unzip latest.zip
+  rm latest.zip
+  mv prestashop public_html
+}
+
+function db-get-clean-name() {
   local SITE_NAME
   SITE_NAME=${1}
   # Lowercase and replace " " and . with _
@@ -223,4 +253,11 @@ function get-clean-db-name() {
   DATABASE_NAME=${DATABASE_NAME//./_}
   DATABASE_NAME=${DATABASE_NAME// /_}
   echo $DATABASE_NAME
+}
+
+function db-create() {
+  local DATABASE_NAME
+  DATABASE_NAME=$1
+  msg_info "Creating db with name $DATABASE_NAME"
+  mysql -e "CREATE DATABASE \`$DATABASE_NAME\`"
 }
