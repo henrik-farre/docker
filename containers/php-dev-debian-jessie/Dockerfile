@@ -52,7 +52,8 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
       graphviz \
  && apt-get clean \
  && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/* \
- && rm -rf /usr/share/man/?? /usr/share/man/??_*
+ && rm -rf /usr/share/man/?? /usr/share/man/??_* \
+ && sed -rie '/# ~\/.bashrc/a export TERM=xterm\nexport SHELL=bash' /root/.bashrc
 
 # Apache
 # Default virtual host is put in conf-enabled as sites-enabled is shared with the host
