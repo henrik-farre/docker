@@ -21,7 +21,7 @@ Replace domain.tld with a domain pointing to localhost.
 * Drupal8: Latest version of Drupal 8 is installed
 * Drupal7: Latest version of Drupal 7 is installed
 * Wordpress: Latest version of Wordpress is installed
-* Prestaship: Latest version of Prestashop is installed
+* Prestashop: Latest version of Prestashop is installed
 
 ## Tools
 
