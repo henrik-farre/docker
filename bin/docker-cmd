@@ -43,6 +43,10 @@ case "$ACTION" in
     site-create-drupal "$2" "$3"
     site-fix-permissions "$2"
     ;;
+  site-create-wordpress)
+    site-create-wordpress "$2"
+    site-fix-permissions "$2"
+    ;;
   *)
     msg_warning "Unknown action $ACTION"
     ;;

@@ -97,7 +97,7 @@ function usage() {
   echo ""
   echo "Avaliable actions:"
   echo -e "\tstart\t\t: Starts a container, see container dir for avaliable containers"
-  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8"
+  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress"
   echo -e "\tdb-import\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
   echo -e "\tapache-reload\t: Restarts Apache in the container, for example to load a new virtual host"
   echo -e "\tshell\t\t: Executes an interactive shell inside the container"
@@ -119,8 +119,17 @@ function site-create() {
     exit 1
   fi
 
+  if [[ ! -z "$SITE_TYPE" ]]; then
+    declare -A SUPPORTED_SITE_TYPES=( [DRUPAL7]=1 [DRUPAL8]=1 [WORDPRESS]=1 )
+    if [[ ! ${SUPPORTED_SITE_TYPES[${SITE_TYPE^^}]} ]]; then
+      msg_error "Unknown site type $SITE_TYPE"
+      exit 1
+    fi
+  fi
+
   site-create-dirs "$SITE_NAME"
   site-create-vhost "$SITE_NAME"
+
   if [[ ! -z "$SITE_TYPE" ]]; then
     local CONTAINER_NAME
     CONTAINER_NAME=$(docker-get-running-container-name)
@@ -131,6 +140,9 @@ function site-create() {
         ;;
       DRUPAL8)
         docker-exec-in-container "$CONTAINER_NAME" site-create-drupal "$SITE_NAME" "8"
+        ;;
+      WORDPRESS)
+        docker-exec-in-container "$CONTAINER_NAME" site-create-wordpress "$SITE_NAME"
         ;;
     esac
   fi
@@ -144,10 +156,7 @@ function site-create-drupal() {
     SITE_NAME=${1}
     # Default to version 7
     DRUPAL_VERSION=${2:-7}
-    # Lowercase and replace " " and . with _
-    DATABASE_NAME=${SITE_NAME,,}
-    DATABASE_NAME=${DATABASE_NAME//./_}
-    DATABASE_NAME=${DATABASE_NAME// /_}
+    DATABASE_NAME=$(get-clean-db-name "$SITE_NAME")
     cd "/var/www/${SITE_NAME}/"
     rmdir public_html
     msg_info "Creating Drupal ${DRUPAL_VERSION} site"
@@ -161,6 +170,22 @@ function site-create-drupal() {
       8)
         drush -y config-set system.file path.temporary "/var/www/${SITE_NAME}/tmp/"
     esac
+}
+
+function site-create-wordpress() {
+  local SITE_NAME
+  local DATABASE_NAME
+  SITE_NAME=${1}
+  DATABASE_NAME=$(get-clean-db-name "$SITE_NAME")
+  cd "/var/www/${SITE_NAME}/public_html"
+  msg_info "Creating Wordpress site"
+  wp core download --allow-root
+  wp core config --dbhost=localhost --dbname="$DATABASE_NAME" --dbuser=root --dbpass=root --allow-root
+  wp db create --allow-root
+  chmod 600 wp-config.php
+  wp core install --url="$SITE_NAME" --title="$SITE_NAME" --admin_name=admin --admin_password=admin --admin_email="admin@${SITE_NAME}" --allow-root
+  msg_info "Removing wp cli cache"
+  rm -rf /root/.wp-cli/cache
 }
 
 function site-create-vhost() {
@@ -190,3 +215,12 @@ function apache-reload() {
   docker-exec-in-container "$CONTAINER_NAME" apache-reload
 }
 
+function get-clean-db-name() {
+  local SITE_NAME
+  SITE_NAME=${1}
+  # Lowercase and replace " " and . with _
+  DATABASE_NAME=${SITE_NAME,,}
+  DATABASE_NAME=${DATABASE_NAME//./_}
+  DATABASE_NAME=${DATABASE_NAME// /_}
+  echo $DATABASE_NAME
+}
