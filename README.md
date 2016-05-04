@@ -27,3 +27,4 @@ Replace domain.tld with a domain pointing to localhost.
 
 * Webgrind: http://localhost/webgrind
 * Mailhog: http://localhost:8025/
+* Blackfire.io: Create account, copy containers/docker.env.skel to containers/docker.env, edit containers/docker.env, call ```pilotboat blackfire-curl http://your.url```

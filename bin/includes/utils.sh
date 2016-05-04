@@ -55,6 +55,12 @@ function docker-setup() {
     fi
   done
 
+  msg_info "Checking for configured docker.env file"
+  if [[ ! -f "${CONTAINER_DIR}/docker.env" ]]; then
+    msg_error "\tYou need to copy ${CONTAINER_DIR}/docker.env.skel to ${CONTAINER_DIR}/docker.env"
+    ERROR=1
+  fi
+
   if [[ $ERROR -gt 0 ]]; then
     msg_error "Setup did not succeed"
     exit 1
@@ -96,12 +102,13 @@ function usage() {
   echo "pilotboat [ACTION]"
   echo ""
   echo "Avaliable actions:"
-  echo -e "\tstart\t\t: Starts a container, see container dir for avaliable containers"
+  echo -e "\tstart\t\t\t: Starts a container, see container dir for avaliable containers"
   echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress or Prestashop"
-  echo -e "\tdb-import\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
-  echo -e "\tapache-reload\t: Restarts Apache in the container, for example to load a new virtual host"
-  echo -e "\tshell\t\t: Executes an interactive shell inside the container"
-  echo -e "\texport\t\t: Exports a container to a tar file"
+  echo -e "\tdb-import\t\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
+  echo -e "\tapache-reload\t\t: Restarts Apache in the container, for example to load a new virtual host"
+  echo -e "\tshell\t\t\t: Executes an interactive shell inside the container"
+  echo -e "\texport\t\t\t: Exports a container to a tar file"
+  echo -e "\tblackfire-curl [URL]\t: Call blackfire curl for URL"
 }
 
 function site-create() {
@@ -260,4 +267,11 @@ function db-create() {
   DATABASE_NAME=$1
   msg_info "Creating db with name $DATABASE_NAME"
   mysql -e "CREATE DATABASE \`$DATABASE_NAME\`"
+}
+
+function blackfire-curl() {
+  local URL
+  URL=$1
+  source "${CONTAINER_DIR}/docker.env"
+  docker run -it --rm -e BLACKFIRE_CLIENT_ID="${BLACKFIRE_CLIENT_ID}" -e BLACKFIRE_CLIENT_TOKEN="${BLACKFIRE_CLIENT_TOKEN}" blackfire/blackfire blackfire curl "$URL"
 }

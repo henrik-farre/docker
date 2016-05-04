@@ -87,6 +87,14 @@ case "$ACTION" in
     CONTAINER_NAME=$(docker-get-running-container-name)
     docker exec -ti "$CONTAINER_NAME" bash
     ;;
+  blackfire-curl)
+    URL=${2:-}
+    if [[ -z "$URL" ]]; then
+      msg_error "blackfire-curl requires a valid url"
+      exit 1
+    fi
+    blackfire-curl $URL
+    ;;
   *)
     msg_warning "Unknown action $ACTION"
     usage

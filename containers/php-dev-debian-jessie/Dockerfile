@@ -100,6 +100,15 @@ RUN curl -SL https://github.com/alpha0010/webgrind/archive/${WEBGRIND_VERSION}.t
     && sed -i -e "s#dotExecutable = '/usr/local/bin/dot'#dotExecutable = '/usr/bin/dot'#" config.php \
     && chown -R www-data /opt/webgrind-${WEBGRIND_VERSION}
 
+# Blackfire
+# Based on https://blackfire.io/docs/integrations/docker (echo -e problem: https://github.com/docker/docker/issues/8949)
+RUN version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
+    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \
+    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
+    && mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
+    && /bin/echo -e "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707" > /etc/php5/apache2/conf.d/blackfire.ini \
+    && /bin/echo -e "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707" > /etc/php5/cli/conf.d/blackfire.ini
+
 # SSMTP to mailhog
 RUN mkdir -p /usr/bin/;\
   curl -L https://github.com/mailhog/MailHog/releases/download/v${MAILHOG_VERSION}/MailHog_linux_amd64 -o /usr/bin/mailhog \

@@ -2,3 +2,4 @@
 sites/*
 vhosts/*
 databases/*
+containers/docker.env

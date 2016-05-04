@@ -9,11 +9,21 @@ services:
       context: ../
       dockerfile: containers/php-dev-debian-jessie/Dockerfile
     image: php-dev:debian-jessie
+    links:
+      - blackfire
     volumes:
       - ../sites:/var/www
       - ../databases:/var/databases
       - ../vhosts:/etc/apache2/sites-enabled
       - php-dev-data:/var/lib/mysql
     ports:
-      - "80:80"
-      - "8025:8025"
+      - "80:80"     # Apache
+      - "8025:8025" # MailCatcher
+    env_file:
+      - docker.env
+
+  blackfire:
+    restart: always
+    image: blackfire/blackfire
+    env_file:
+      - docker.env
