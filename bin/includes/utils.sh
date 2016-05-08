@@ -173,7 +173,7 @@ function site-create-drupal() {
     msg_info "Creating Drupal ${DRUPAL_VERSION} site"
     drush dl "drupal-${DRUPAL_VERSION}" --drupal-project-rename=public_html -y
     cd public_html
-    drush site-install standard --account-name=admin --account-pass=admin --db-url=mysql://root:${MYSQL_PASS}@localhost/"${DATABASE_NAME}" --site-name="$SITE_NAME" -y
+    drush site-install standard --account-name=admin --account-pass=admin --db-url=mysql://root:${MYSQL_PASS}@${MYSQL_HOST}/"${DATABASE_NAME}" --site-name="$SITE_NAME" -y
     case $DRUPAL_VERSION in
       7)
         drush -y vset file_temporary_path "/var/www/${SITE_NAME}/tmp"
@@ -191,7 +191,7 @@ function site-create-wordpress() {
   cd "/var/www/${SITE_NAME}/public_html"
   msg_info "Creating Wordpress site"
   wp core download --allow-root
-  wp core config --dbhost=localhost --dbname="$DATABASE_NAME" --dbuser=root --dbpass=root --allow-root
+  wp core config --dbhost=${MYSQL_HOST} --dbname="$DATABASE_NAME" --dbuser=root --dbpass=root --allow-root
   wp db create --allow-root
   chmod 600 wp-config.php
   wp core install --url="$SITE_NAME" --title="$SITE_NAME" --admin_name=admin --admin_password=admin --admin_email="admin@${SITE_NAME}" --allow-root
@@ -207,7 +207,7 @@ function site-create-prestashop() {
   cd "/var/www/${SITE_NAME}/public_html/install"
   msg_info "Creating Prestashop site"
   db-create "$DATABASE_NAME"
-  php index_cli.php --domain="$SITE_NAME" --db_server=localhost --db_name="$DATABASE_NAME" --db_user=root --db_password=root --email="admin@${SITE_NAME}"
+  php index_cli.php --domain="$SITE_NAME" --db_server=${MYSQL_HOST} --db_name="$DATABASE_NAME" --db_user=root --db_password=root --email="admin@${SITE_NAME}" --password=admin
   cd ..
   rm -rf install
 }
