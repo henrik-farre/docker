@@ -1,6 +1,4 @@
 version: '2'
-volumes:
-  php-dev-data: {}
 services:
   php-dev-debian-jessie:
     container_name: php-dev-debian-jessie
@@ -8,14 +6,16 @@ services:
     build:
       context: ../
       dockerfile: containers/php-dev-debian-jessie/Dockerfile
+    depends_on:
+      - phpmyadmin
     image: php-dev:debian-jessie
     links:
       - blackfire
+      - database
     volumes:
       - ../sites:/var/www
       - ../databases:/var/databases
       - ../vhosts:/etc/apache2/sites-enabled
-      - php-dev-data:/var/lib/mysql
     ports:
       - "80:80"     # Apache
       - "8025:8025" # MailCatcher
@@ -23,7 +23,35 @@ services:
       - docker.env
 
   blackfire:
+    container_name: blackfire
     restart: always
     image: blackfire/blackfire
     env_file:
       - docker.env
+
+  database:
+    container_name: database
+    image: mariadb:latest
+    ports:
+      - 3306
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - database
+    links:
+      - database
+    ports:
+      - 8081:80
+    restart: always
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_PORT=3306
+      - PMA_HOST=database
+      - PMA_USER=root
+      - PMA_PASSWORD=root
