@@ -2,26 +2,19 @@ FROM debian:jessie
 MAINTAINER Henrik Farre <henrik@rockhopper.dk>
 
 ENV DEBIAN_FRONTEND=noninteractive \
-DEBIAN_PRIORITY=critical \
-DEBCONF_NOWARNINGS=yes \
-MYSQL_PASS=root \
-WEBGRIND_VERSION=1.2 \
-MAILHOG_VERSION=0.2.0 \
-XDEBUG_HOST=172.17.0.1 \
-XDEBUG_PORT=9000
+  DEBIAN_PRIORITY=critical \
+  DEBCONF_NOWARNINGS=yes \
+  WEBGRIND_VERSION=1.2 \
+  MAILHOG_VERSION=0.2.0 \
+  XDEBUG_HOST=172.17.0.1 \
+  XDEBUG_PORT=9000 \
+  MYSQL_HOST=database
 
 # Check local docker0 interface if Vdebug can't connect: ip addr show docker0
 
 # Default config
 RUN echo "tzdata tzdata/Areas select Europe" | debconf-set-selections \
  && echo "tzdata tzdata/Zones/Europe select Copenhagen" | debconf-set-selections \
- && echo "mysql-server mysql-server/root_password password ${MYSQL_PASS}" | debconf-set-selections \
- && echo "mysql-server mysql-server/root_password_again password ${MYSQL_PASS}" | debconf-set-selections \
- && echo "phpmyadmin phpmyadmin/app-password-confirm password" | debconf-set-selections \
- && echo "phpmyadmin phpmyadmin/dbconfig-install boolean true" | debconf-set-selections \
- && echo "phpmyadmin phpmyadmin/mysql/admin-pass password ${MYSQL_PASS}" | debconf-set-selections \
- && echo "phpmyadmin phpmyadmin/mysql/app-pass password ${MYSQL_PASS}" | debconf-set-selections \
- && echo "phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2" | debconf-set-selections \
  && echo "locales locales/locales_to_be_generated multiselect     en_US.UTF-8 UTF-8, en_GB.UTF-8 UTF-8, da_DK.UTF-8 UTF-8" | debconf-set-selections \
  && echo "locales locales/default_environment_locale      select  da_DK.UTF-8" | debconf-set-selections
 
@@ -30,30 +23,31 @@ RUN echo "tzdata tzdata/Areas select Europe" | debconf-set-selections \
 # ca-certificates else curl will fail on https
 RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
  && apt-get -q -y --no-install-recommends install \
+      mariadb-client \
       ca-certificates \
       locales \
       apache2 \
-      mariadb-server-10.0 \
-      phpmyadmin \
       libapache2-mod-php5 \
+      curl \
       php-apc \
+      php-pear \
+      php5-mysql \
       php5-tidy \
       php5-curl \
-      php-pear \
       php5-xdebug \
-      curl \
       php5-mcrypt \
       php5-sqlite \
-      imagemagick \
       php5-sybase \
       php5-ldap \
       php5-gd \
+      imagemagick \
       python \
       graphviz \
  && apt-get clean \
  && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/* \
  && rm -rf /usr/share/man/?? /usr/share/man/??_* \
- && sed -rie '/# ~\/.bashrc/a export TERM=xterm\nexport SHELL=bash' /root/.bashrc
+ && sed -rie '/# ~\/.bashrc/a export TERM=xterm\nexport SHELL=bash' /root/.bashrc \
+ && /bin/echo -e "[client]\nuser=root\nhost=${MYSQL_HOST}\npassword=root" > /root/.my.cnf
 
 # Apache
 # Default virtual host is put in conf-enabled as sites-enabled is shared with the host
@@ -117,11 +111,8 @@ RUN mkdir -p /usr/bin/;\
   && sed -i -e 's#;sendmail_path =#sendmail_path =/usr/bin/mailhog sendmail#' /etc/php5/cli/php.ini
 #  && sed -i -e 's/mailhub=mail/mailhub=127.0.0.1:1025/' /etc/ssmtp/ssmtp.conf
 
-COPY containers/php-dev-debian-jessie/add-files/root.my.cnf /root/.my.cnf
-COPY containers/php-dev-debian-jessie/add-files/phpmyadmin-config.inc.php /etc/phpmyadmin/config.inc.php
 COPY containers/php-dev-debian-jessie/add-files/dot.bashrc /root/.bashrc
 COPY containers/php-dev-debian-jessie/add-files/startup-in-container.sh /sbin/start.sh
-COPY containers/php-dev-debian-jessie/add-files/mysql-setup.sql /opt/mysql-setup.sql
 COPY containers/php-dev-debian-jessie/add-files/webgrind.conf /etc/apache2/conf-enabled/webgrind.conf
 COPY bin/docker-cmd /usr/bin/docker-cmd
 COPY bin/includes/utils.sh /usr/bin/utils.sh
