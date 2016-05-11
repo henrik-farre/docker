@@ -67,8 +67,8 @@ case "$ACTION" in
 
     docker-exec-in-container "$CONTAINER_NAME" db-import "$DATABASE_NAME"
     ;;
-  apache-reload)
-    apache-reload
+  webserver-reload)
+    webserver-reload
     ;;
   site-create)
     SITE_NAME=${2:-}

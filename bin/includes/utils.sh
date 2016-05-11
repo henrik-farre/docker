@@ -103,9 +103,9 @@ function usage() {
   echo ""
   echo "Avaliable actions:"
   echo -e "\tstart\t\t\t: Starts a container, see container dir for avaliable containers"
-  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress or Prestashop"
+  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress, Prestashop or Symfony"
   echo -e "\tdb-import\t\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
-  echo -e "\tapache-reload\t\t: Restarts Apache in the container, for example to load a new virtual host"
+  echo -e "\webserver-reload\t\t: Restarts the webserver (Apache/Nginx) in the container, for example to load a new virtual host"
   echo -e "\tshell\t\t\t: Executes an interactive shell inside the container"
   echo -e "\texport\t\t\t: Exports a container to a tar file"
   echo -e "\tblackfire-curl [URL]\t: Call blackfire curl for URL"
@@ -126,17 +126,7 @@ function site-create() {
     exit 1
   fi
 
-  if [[ ! -z "$SITE_TYPE" ]]; then
-    declare -A SUPPORTED_SITE_TYPES=( [DRUPAL7]=1 [DRUPAL8]=1 [WORDPRESS]=1 [PRESTASHOP]=1 )
-    if [[ ! ${SUPPORTED_SITE_TYPES[${SITE_TYPE^^}]} ]]; then
-      msg_error "Unknown site type $SITE_TYPE"
-      exit 1
-    fi
-  fi
-
-  site-create-dirs "$SITE_NAME"
-  site-create-vhost "$SITE_NAME"
-
+  # If no site type is set, we just create an empty public_html
   if [[ ! -z "$SITE_TYPE" ]]; then
     local CONTAINER_NAME
     CONTAINER_NAME=$(docker-get-running-container-name)
@@ -155,9 +145,19 @@ function site-create() {
         prestashop-download-latest "$SITE_NAME"
         docker-exec-in-container "$CONTAINER_NAME" site-create-prestashop "$SITE_NAME"
         ;;
+      SYMFONY)
+        docker-exec-in-container "$CONTAINER_NAME" site-create-symfony "$SITE_NAME"
+        ;;
+      *)
+        msg_error "Unknown site type $SITE_TYPE"
+        exit 1
+        ;;
     esac
   fi
-  apache-reload
+
+  # TODO: support Nginx
+  site-create-apache-vhost "${SITE_NAME}" "${SITE_TYPE^^}"
+  webserver-reload
 }
 
 function site-create-drupal() {
@@ -168,8 +168,11 @@ function site-create-drupal() {
     # Default to version 7
     DRUPAL_VERSION=${2:-7}
     DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+
+    site-create-dirs "${SITE_NAME}"
     cd "/var/www/${SITE_NAME}/"
     rmdir public_html
+
     msg_info "Creating Drupal ${DRUPAL_VERSION} site"
     drush dl "drupal-${DRUPAL_VERSION}" --drupal-project-rename=public_html -y
     cd public_html
@@ -188,7 +191,10 @@ function site-create-wordpress() {
   local DATABASE_NAME
   SITE_NAME=${1}
   DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+
+  site-create-dirs "${SITE_NAME}"
   cd "/var/www/${SITE_NAME}/public_html"
+
   msg_info "Creating Wordpress site"
   wp core download --allow-root
   wp core config --dbhost=${MYSQL_HOST} --dbname="$DATABASE_NAME" --dbuser=root --dbpass=root --allow-root
@@ -204,7 +210,10 @@ function site-create-prestashop() {
   local DATABASE_NAME
   SITE_NAME=${1}
   DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+
+  site-create-dirs "${SITE_NAME}"
   cd "/var/www/${SITE_NAME}/public_html/install"
+
   msg_info "Creating Prestashop site"
   db-create "$DATABASE_NAME"
   php index_cli.php --domain="$SITE_NAME" --db_server=${MYSQL_HOST} --db_name="$DATABASE_NAME" --db_user=root --db_password=root --email="admin@${SITE_NAME}" --password=admin
@@ -212,16 +221,40 @@ function site-create-prestashop() {
   rm -rf install
 }
 
-function site-create-vhost() {
+function site-create-symfony() {
   local SITE_NAME
+  local DATABASE_NAME
+  SITE_NAME=${1}
+  DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+
+  cd "/var/www/"
+
+  msg_info "Creating Symfony site"
+  db-create "$DATABASE_NAME"
+  symfony new "${SITE_NAME}" -n
+
+  mkdir "/var/www/${SITE_NAME}/"{logs,sessions,upload,tmp}
+}
+
+function site-create-apache-vhost() {
+  local SITE_NAME
+  local SITE_TYPE
+  local VHOST_TPL
   SITE_NAME=$1
-  sed -re "s/\[DOMAIN.TLD\]/$SITE_NAME/" "${WORK_DIR}/bin/includes/vhost.tpl" > "${VHOST_DIR}/${SITE_NAME}.conf"
+  SITE_TYPE=$2
+  VHOST_TPL="${WORK_DIR}/bin/includes/vhost.tpl"
+
+  if [[ -f "${WORK_DIR}/bin/includes/vhost-${SITE_TYPE}.tpl" ]]; then
+    VHOST_TPL="${WORK_DIR}/bin/includes/vhost-${SITE_TYPE}.tpl"
+  fi
+
+  sed -re "s/\[DOMAIN.TLD\]/$SITE_NAME/" "${VHOST_TPL}" > "${VHOST_DIR}/${SITE_NAME}.conf"
 }
 
 function site-create-dirs() {
   local SITE_NAME
   SITE_NAME=$1
-  mkdir -p "${SITE_DIR}/${SITE_NAME}"/{public_html,logs,sessions,upload,tmp}
+  mkdir -p "/var/www/${SITE_NAME}"/{public_html,logs,sessions,upload,tmp}
 }
 
 function site-fix-permissions() {
@@ -233,10 +266,10 @@ function site-fix-permissions() {
   find "/var/www/${SITE_NAME}" -type d -exec chmod g+s "{}" \;
 }
 
-function apache-reload() {
+function webserver-reload() {
   local CONTAINER_NAME
   CONTAINER_NAME=$(docker-get-running-container-name)
-  docker-exec-in-container "$CONTAINER_NAME" apache-reload
+  docker-exec-in-container "$CONTAINER_NAME" webserver-reload
 }
 
 function prestashop-download-latest() {

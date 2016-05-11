@@ -8,7 +8,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   MAILHOG_VERSION=0.2.0 \
   XDEBUG_HOST=172.17.0.1 \
   XDEBUG_PORT=9000 \
-  MYSQL_HOST=database
+  MYSQL_HOST=database \
+  WEB_SERVER=APACHE
 
 # Check local docker0 interface if Vdebug can't connect: ip addr show docker0
 
@@ -58,9 +59,10 @@ RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.co
   && a2enmod expires \
   && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf
 
-# Composer, Drush, WP-cli
+# Composer, Drush, WP-cli, Symfony installer
 # http://docs.drush.org/en/master/install/
 # http://wp-cli.org/
+# http://symfony.com/doc/current/book/installation.html
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
  && curl -O http://files.drush.org/drush.phar \
  && php drush.phar core-status \
@@ -69,13 +71,16 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ 
  && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
  && php wp-cli.phar --info --allow-root \
  && chmod +x wp-cli.phar \
- && mv wp-cli.phar /usr/bin/wp
+ && mv wp-cli.phar /usr/bin/wp \
+ && curl -LsS https://symfony.com/installer -o /usr/bin/symfony \
+ && chmod +x /usr/bin/symfony
 
 # PHP and Xdebug settings
 # max_nesting_level is needed by Drupal 8
 RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php.ini \
     && sed -i -e 's/upload_max_filesize = 2M/upload_max_filesize = 200M/' /etc/php5/apache2/php.ini \
     && sed -i -e 's/;date.timezone =/date.timezone = Europe\/Copenhagen/' /etc/php5/apache2/php.ini \
+    && sed -i -e 's/;date.timezone =/date.timezone = Europe\/Copenhagen/' /etc/php5/cli/php.ini \
     && echo xdebug.remote_enable=1 >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.remote_autostart=1 >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.remote_host=${XDEBUG_HOST} >> /etc/php5/apache2/conf.d/20-xdebug.ini;\

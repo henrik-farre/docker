@@ -4,6 +4,7 @@ set -o errexit
 set -o pipefail
 IFS=$'\n\t'
 
+# Some variables come from the environment
 DATABASE_DIR="/var/databases"
 
 source utils.sh
@@ -35,8 +36,16 @@ case "$ACTION" in
     msg_info "Importing..."
     gunzip -c "${DATABASE_DIR}/${DATABASE_NAME}.sql.gz" | mysql "$DATABASE_NAME"
     ;;
-  apache-reload)
-    service apache2 reload
+  webserver-reload)
+    case "${WEB_SERVER}" in
+      APACHE)
+        service apache2 reload
+        ;;
+      *)
+        msg_error "Unknown webserver '${WEB_SERVER}'"
+        exit 1
+        ;;
+    esac
     ;;
   site-create-drupal)
     site-create-drupal "$2" "$3"
@@ -48,6 +57,10 @@ case "$ACTION" in
     ;;
   site-create-prestashop)
     site-create-prestashop "$2"
+    site-fix-permissions "$2"
+    ;;
+  site-create-symfony)
+    site-create-symfony "$2"
     site-fix-permissions "$2"
     ;;
   *)
