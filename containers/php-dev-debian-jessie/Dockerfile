@@ -52,12 +52,14 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
 
 # Apache
 # Default virtual host is put in conf-enabled as sites-enabled is shared with the host
+# Enable shell for www-data
 RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.conf \
   && a2enmod rewrite \
   && a2enmod php5 \
   && a2enmod headers \
   && a2enmod expires \
-  && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf
+  && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf \
+  && /usr/bin/chsh -s /bin/bash www-data
 
 # Composer, Drush, WP-cli, Symfony installer
 # http://docs.drush.org/en/master/install/
