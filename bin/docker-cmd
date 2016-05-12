@@ -57,7 +57,8 @@ case "$ACTION" in
     esac
     ;;
   site-create-drupal)
-    site-create-drupal "$2" "$3"
+    DRUPAL_VERSION=${3:-7}
+    site-create-drupal "$2" "$DRUPAL_VERSION"
     site-fix-permissions "$2"
     ;;
   site-create-wordpress)
