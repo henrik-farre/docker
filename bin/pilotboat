@@ -84,8 +84,8 @@ case "$ACTION" in
     site-create "$SITE_NAME" "$SITE_TYPE"
     ;;
   shell)
-    CONTAINER_NAME=$(docker-get-running-container-name)
-    docker exec -ti "$CONTAINER_NAME" bash
+    USER=${1:-www-data}
+    docker-exec-shell $USER
     ;;
   blackfire-curl)
     URL=${2:-}
