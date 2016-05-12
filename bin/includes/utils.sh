@@ -227,7 +227,6 @@ function site-create-prestashop() {
   SITE_NAME=${1}
   DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
 
-  site-create-dirs "${SITE_NAME}"
   cd "/var/www/${SITE_NAME}/public_html/install"
 
   msg_info "Creating Prestashop site"
@@ -292,8 +291,9 @@ function prestashop-download-latest() {
   msg_info "Downloading latest release of Prestashop"
   local SITE_NAME
   SITE_NAME=$1
+
+  mkdir -p "${WORK_DIR}sites/${SITE_NAME}"/{logs,sessions,upload,tmp}
   cd "${WORK_DIR}sites/${SITE_NAME}"
-  rmdir public_html
   # From http://stackoverflow.com/questions/24085978/github-url-for-latest-release-of-the-download-file because providing a direct link is hard...
   curl -o latest.zip -L $(curl -s https://api.github.com/repos/PrestaShop/PrestaShop/releases/latest | grep 'browser_' | cut -d\" -f4)
   unzip latest.zip
