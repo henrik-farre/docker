@@ -36,6 +36,15 @@ case "$ACTION" in
     msg_info "Importing..."
     gunzip -c "${DATABASE_DIR}/${DATABASE_NAME}.sql.gz" | mysql "$DATABASE_NAME"
     ;;
+  db-create)
+    DATABASE_NAME=${2:-}
+    if [[ -z "$DATABASE_NAME" ]]; then
+      msg_error "db-create requires an database name"
+      exit 1
+    fi
+
+    db-create "$DATABASE_NAME"
+    ;;
   webserver-reload)
     case "${WEB_SERVER}" in
       APACHE)
