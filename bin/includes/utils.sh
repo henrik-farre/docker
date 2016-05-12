@@ -121,8 +121,8 @@ function usage() {
   echo -e "\tstart\t\t\t: Starts a container, see container dir for avaliable containers"
   echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress, Prestashop or Symfony"
   echo -e "\tdb-import\t\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
-  echo -e "\webserver-reload\t\t: Restarts the webserver (Apache/Nginx) in the container, for example to load a new virtual host"
-  echo -e "\tshell\t\t\t: Executes an interactive shell inside the container"
+  echo -e "\twebserver-reload\t\t: Restarts the webserver (Apache/Nginx) in the container, for example to load a new virtual host"
+  echo -e "\tshell [USER]\t\t\t: Executes an interactive shell inside the container. USER is default www-data, root is currently the only other option"
   echo -e "\texport\t\t\t: Exports a container to a tar file"
   echo -e "\tblackfire-curl [URL]\t: Call blackfire curl for URL"
 }
