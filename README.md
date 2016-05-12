@@ -20,9 +20,9 @@ Replace domain.tld with a domain pointing to localhost.
     pilotboat site-create domain.tld [SITE_TYPE]
 
 * [None]: if you call site-create with just a domain, you will just get a virtual host, and a directory structure in sites
-* Drupal8: Latest version of Drupal 8 is installed
-* Drupal7: Latest version of Drupal 7 is installed
-* Wordpress: Latest version of Wordpress is installed
+* Drupal8: Latest version of Drupal 8 is installed (Admin user/passwprd: admin/admin)
+* Drupal7: Latest version of Drupal 7 is installed (Admin user/passwprd: admin/admin)
+* Wordpress: Latest version of Wordpress is installed (Admin user/passwprd: admin/admin)
 * Prestashop: Latest version of Prestashop is installed (Admin user/password: admin@DOMAIN.TLD/admin)
 * Symfony: Latest stable version of the Symfony 3 framework
 
