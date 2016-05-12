@@ -119,7 +119,8 @@ function usage() {
   echo ""
   echo "Avaliable actions:"
   echo -e "\tstart\t\t\t: Starts a container, see container dir for avaliable containers"
-  echo -e "\tsite-create [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress, Prestashop or Symfony"
+  echo -e "\tsite-create [DOMAIN] [TYPE]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress, Prestashop or Symfony"
+  echo -e "\tsite-remove [DOMAIN]\t: Creates a virtual host in $VHOST_DIR and directory structure in $SITE_DIR\nTYPE is optional, but can be one of: Drupal7, Drupal8, Wordpress, Prestashop or Symfony"
   echo -e "\tdb-import\t\t: Imports a MySQL database dump. Note: be sure not to overwrite existing databases"
   echo -e "\twebserver-reload\t\t: Restarts the webserver (Apache/Nginx) in the container, for example to load a new virtual host"
   echo -e "\tshell [USER]\t\t\t: Executes an interactive shell inside the container. USER is default www-data, root is currently the only other option"
@@ -173,7 +174,55 @@ function site-create() {
 
   # TODO: support Nginx
   site-create-apache-vhost "${SITE_NAME}" "${SITE_TYPE^^}"
+
+  # Use EUID of the user outside of docker
+  docker-exec-in-container "$CONTAINER_NAME" site-set-permissions "$EUID" "www-data" "$SITE_NAME"
   webserver-reload
+}
+
+function site-remove() {
+  local SITE_NAME
+  local DATABASE_NAME
+  local CONTAINER_NAME
+  local REMOVE_SITE
+  local REMOVE_DB
+  local REMOVE_VHOST
+
+  SITE_NAME=$1
+  DATABASE_NAME=$(db-get-clean-name "$SITE_NAME")
+  CONTAINER_NAME=$(docker-get-running-container-name)
+
+  if [[ ! -d "$SITE_DIR/$SITE_NAME" ]]; then
+    msg_error "site does not exist at $SITE_DIR/$SITE_NAME, will try to remove database and vhost"
+    REMOVE_SITE="n"
+  else
+    read -p "Confirm that you want to delete everything at $SITE_DIR/$SITE_NAME (Y/n):" REMOVE_SITE
+  fi
+
+  read -p "Confirm that you want to drop the database $DATABASE_NAME (Y/n):" REMOVE_DB
+  read -p "Confirm that you want to remove the virtual host $VHOST_DIR/${SITE_NAME}.conf (Y/n):" REMOVE_VHOST
+
+  if [[ "${REMOVE_SITE:-y}" == "y" ]]; then
+    docker-exec-in-container "$CONTAINER_NAME" site-remove-dirs "$SITE_NAME"
+  fi
+
+  if [[ "${REMOVE_DB:-y}" == "y" ]]; then
+    docker-exec-in-container "$CONTAINER_NAME" db-drop "$DATABASE_NAME"
+  fi
+
+  if [[ "${REMOVE_VHOST:-y}" == "y" ]]; then
+    msg_info "Removing $VHOST_DIR/${SITE_NAME}.conf"
+    rm "$VHOST_DIR/${SITE_NAME}.conf"
+  fi
+
+  webserver-reload
+}
+
+function site-remove-dirs() {
+    local SITE_NAME
+    SITE_NAME=${1}
+    msg_info "Removing /var/www/$SITE_NAME"
+    rm -rf "/var/www/${SITE_NAME:?}"
 }
 
 function site-create-drupal() {
@@ -272,11 +321,17 @@ function site-create-dirs() {
   mkdir -p "/var/www/${SITE_NAME}"/{public_html,logs,sessions,upload,tmp}
 }
 
-function site-fix-permissions() {
-  msg_info "Setting group to www-data, rwX permissions and group sticky bit on dirs"
+function site-set-permissions() {
+  local OWNER
+  local GROUP
   local SITE_NAME
-  SITE_NAME=$1
-  chgrp -R www-data "/var/www/${SITE_NAME}"
+  OWNER=$1
+  GROUP=$2
+  SITE_NAME=$3
+
+  msg_info "Setting owner to $OWNER, group to $GROUP, rwX permissions and group sticky bit on dirs"
+  chgrp -R ${GROUP} "/var/www/${SITE_NAME}"
+  chown -R ${OWNER} "/var/www/${SITE_NAME}"
   chmod -R g+rwX "/var/www/${SITE_NAME}"
   find "/var/www/${SITE_NAME}" -type d -exec chmod g+s "{}" \;
 }
@@ -316,6 +371,13 @@ function db-create() {
   DATABASE_NAME=$1
   msg_info "Creating db with name $DATABASE_NAME"
   mysql -e "CREATE DATABASE \`$DATABASE_NAME\`"
+}
+
+function db-drop() {
+  local DATABASE_NAME
+  DATABASE_NAME=$1
+  msg_info "Dropping db with name $DATABASE_NAME"
+  mysql -e "Drop DATABASE \`$DATABASE_NAME\`"
 }
 
 function blackfire-curl() {

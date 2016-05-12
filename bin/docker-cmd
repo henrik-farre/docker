@@ -45,6 +45,15 @@ case "$ACTION" in
 
     db-create "$DATABASE_NAME"
     ;;
+  db-drop)
+    DATABASE_NAME=${2:-}
+    if [[ -z "$DATABASE_NAME" ]]; then
+      msg_error "db-drop requires an database name"
+      exit 1
+    fi
+
+    db-drop "$DATABASE_NAME"
+    ;;
   webserver-reload)
     case "${WEB_SERVER}" in
       APACHE)
@@ -59,19 +68,21 @@ case "$ACTION" in
   site-create-drupal)
     DRUPAL_VERSION=${3:-7}
     site-create-drupal "$2" "$DRUPAL_VERSION"
-    site-fix-permissions "$2"
     ;;
   site-create-wordpress)
     site-create-wordpress "$2"
-    site-fix-permissions "$2"
     ;;
   site-create-prestashop)
     site-create-prestashop "$2"
-    site-fix-permissions "$2"
     ;;
   site-create-symfony)
     site-create-symfony "$2"
-    site-fix-permissions "$2"
+    ;;
+  site-remove-dirs)
+    site-remove-dirs "$2"
+    ;;
+  site-set-permissions)
+    site-set-permissions "$2" "${3:-www-data}" "$4"
     ;;
   *)
     msg_warning "Unknown action $ACTION"

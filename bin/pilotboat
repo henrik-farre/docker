@@ -83,6 +83,15 @@ case "$ACTION" in
     fi
     site-create "$SITE_NAME" "$SITE_TYPE"
     ;;
+  site-remove)
+    SITE_NAME=${2:-}
+    if [[ -z "$SITE_NAME" ]]; then
+      msg_error "site-remove requires a sitename, e.g. domain.tld"
+      exit 1
+    fi
+
+    site-remove "$SITE_NAME"
+    ;;
   shell)
     USER=${1:-www-data}
     docker-exec-shell $USER
