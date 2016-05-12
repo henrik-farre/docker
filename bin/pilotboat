@@ -93,7 +93,7 @@ case "$ACTION" in
     site-remove "$SITE_NAME"
     ;;
   shell)
-    USER=${1:-www-data}
+    USER=${2:-www-data}
     docker-exec-shell $USER
     ;;
   blackfire-curl)
