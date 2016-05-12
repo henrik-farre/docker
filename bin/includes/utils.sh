@@ -98,6 +98,22 @@ function docker-start() {
   docker-compose up "$CONTAINER_NAME"
 }
 
+function docker-exec-shell() {
+  local CONTAINER_NAME
+  local USER
+  USER=$1
+  CONTAINER_NAME=$(docker-get-running-container-name)
+
+  if [[ "${USER}" == 'root' ]]; then
+    docker exec -ti "$CONTAINER_NAME" bash
+  elif [[ "${USER}" == 'www-data' ]]; then
+    docker exec -tiu www-data php-dev-debian-jessie bash
+  else
+    msg_error "Not supported user '${USER}', use root or www-data (default)"
+    exit 1
+  fi
+}
+
 function usage() {
   echo "pilotboat [ACTION]"
   echo ""
