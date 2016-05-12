@@ -9,6 +9,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   XDEBUG_HOST=172.17.0.1 \
   XDEBUG_PORT=9000 \
   MYSQL_HOST=database \
+  MYSQL_USER=root \
+  MYSQL_PASS=root \
   WEB_SERVER=APACHE
 
 # Check local docker0 interface if Vdebug can't connect: ip addr show docker0
