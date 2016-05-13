@@ -11,7 +11,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
   MYSQL_HOST=database \
   MYSQL_USER=root \
   MYSQL_PASS=root \
-  WEB_SERVER=APACHE
+  WEB_SERVER=APACHE \
+  TERM=xterm
 
 # Check local docker0 interface if Vdebug can't connect: ip addr show docker0
 
