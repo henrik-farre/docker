@@ -92,6 +92,16 @@ case "$ACTION" in
 
     site-remove "$SITE_NAME"
     ;;
+  site-set-permissions)
+    SITE_NAME=${2:-}
+    if [[ -z "$SITE_NAME" ]]; then
+      msg_error "site-remove requires a sitename, e.g. domain.tld"
+      exit 1
+    fi
+
+    CONTAINER_NAME=$(docker-get-running-container-name)
+    docker-exec-in-container "$CONTAINER_NAME" site-set-permissions "$EUID" "www-data" "$SITE_NAME"
+    ;;
   shell)
     USER=${2:-www-data}
     docker-exec-shell $USER
