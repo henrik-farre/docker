@@ -50,7 +50,6 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
  && apt-get clean \
  && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/* \
  && rm -rf /usr/share/man/?? /usr/share/man/??_* \
- && sed -rie '/# ~\/.bashrc/a export TERM=xterm\nexport SHELL=bash' /root/.bashrc \
  && /bin/echo -e "[client]\nuser=root\nhost=${MYSQL_HOST}\npassword=root" > /root/.my.cnf
 
 # Apache
