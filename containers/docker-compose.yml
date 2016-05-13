@@ -12,6 +12,7 @@ services:
     links:
       - blackfire
       - database
+      - phantomjs
     volumes:
       - ../sites:/var/www
       - ../databases:/var/databases
@@ -56,3 +57,10 @@ services:
       - PMA_HOST=database
       - PMA_USER=root
       - PMA_PASSWORD=root
+
+  phantomjs:
+    image: cmfatih/phantomjs
+    expose:
+      - 8910
+    entrypoint: phantomjs
+    command: --webdriver=8910 --ignore-ssl-errors=true
