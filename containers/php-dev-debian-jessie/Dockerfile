@@ -118,15 +118,9 @@ RUN mkdir -p /usr/bin/;\
   && chmod +x /usr/bin/mailhog \
   && sed -i -e 's#;sendmail_path =#sendmail_path =/usr/bin/mailhog sendmail#' /etc/php5/apache2/php.ini \
   && sed -i -e 's#;sendmail_path =#sendmail_path =/usr/bin/mailhog sendmail#' /etc/php5/cli/php.ini
-#  && sed -i -e 's/mailhub=mail/mailhub=127.0.0.1:1025/' /etc/ssmtp/ssmtp.conf
 
 COPY containers/php-dev-debian-jessie/add-files/dot.bashrc /root/.bashrc
 COPY containers/php-dev-debian-jessie/add-files/startup-in-container.sh /sbin/start.sh
 COPY containers/php-dev-debian-jessie/add-files/webgrind.conf /etc/apache2/conf-enabled/webgrind.conf
 COPY bin/docker-cmd /usr/bin/docker-cmd
 COPY bin/includes/utils.sh /usr/bin/utils.sh
-
-ENTRYPOINT ["/sbin/start.sh"]
-
-# So that we at somepoint can do stuff in startup-in-container.sh
-CMD ["--dev"]
