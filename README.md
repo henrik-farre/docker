@@ -28,7 +28,15 @@ Replace domain.tld with a domain pointing to localhost.
 
 ## Tools
 
+Accessible from http
 * Webgrind: http://localhost/webgrind
 * Mailhog: http://localhost:8025/
 * phpMyAdmin: http://localhost:8081/
 * Blackfire.io: call ```pilotboat blackfire-curl http://your.url```
+
+Accessible from shell (enter using pilotboat shell)
+* composer
+* drush
+* Drupal console (drupal command), configuration is in sites/.console or in /var/www/.console inside the container
+* wp-cli
+* symfony installer (symfony command)

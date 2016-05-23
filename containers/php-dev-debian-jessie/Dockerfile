@@ -63,22 +63,6 @@ RUN echo "ServerName jessie.localdomain" | tee /etc/apache2/conf-enabled/fqdn.co
   && ln -s /etc/apache2/sites-available/000-default.conf /etc/apache2/conf-enabled/000-default.conf \
   && /usr/bin/chsh -s /bin/bash www-data
 
-# Composer, Drush, WP-cli, Symfony installer
-# http://docs.drush.org/en/master/install/
-# http://wp-cli.org/
-# http://symfony.com/doc/current/book/installation.html
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
- && curl -O http://files.drush.org/drush.phar \
- && php drush.phar core-status \
- && chmod +x drush.phar \
- && mv drush.phar /usr/bin/drush \
- && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
- && php wp-cli.phar --info --allow-root \
- && chmod +x wp-cli.phar \
- && mv wp-cli.phar /usr/bin/wp \
- && curl -LsS https://symfony.com/installer -o /usr/bin/symfony \
- && chmod +x /usr/bin/symfony
-
 # PHP and Xdebug settings
 # max_nesting_level is needed by Drupal 8
 RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php.ini \
@@ -95,6 +79,23 @@ RUN sed -i -e 's/post_max_size = 8M/post_max_size = 200M/' /etc/php5/apache2/php
     echo xdebug.profiler_output_name=cachegrind.out.%t.%p >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.profiler_output_dir=/tmp/ >> /etc/php5/apache2/conf.d/20-xdebug.ini;\
     echo xdebug.max_nesting_level=256 >> /etc/php5/apache2/conf.d/20-xdebug.ini;
+
+# Composer, Drush, WP-cli, Symfony installer, Drupal Console
+# http://docs.drush.org/en/master/install/
+# http://wp-cli.org/
+# http://symfony.com/doc/current/book/installation.html
+# https://drupalconsole.com/
+RUN curl https://getcomposer.org/installer -LsS | php -- --install-dir=/usr/bin/ --filename=composer \
+ && curl http://files.drush.org/drush.phar -LsS -o /usr/bin/drush \
+ && chmod +x /usr/bin/drush \
+ && su - www-data -c "php /usr/bin/drush core-status" \
+ && curl https://drupalconsole.com/installer -LsS -o /usr/bin/drupal \
+ && chmod +x  /usr/bin/drupal \
+ && curl https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -LsS -o /usr/bin/wp \
+ && chmod +x /usr/bin/wp \
+ && su - www-data -c "php /usr/bin/wp --info" \
+ && curl https://symfony.com/installer -LsS -o /usr/bin/symfony \
+ && chmod +x /usr/bin/symfony
 
 # Webgrind
 RUN curl -SL https://github.com/alpha0010/webgrind/archive/${WEBGRIND_VERSION}.tar.gz \

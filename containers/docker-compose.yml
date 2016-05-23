@@ -28,7 +28,6 @@ services:
 
   blackfire:
     container_name: blackfire
-    restart: always
     image: blackfire/blackfire
     env_file:
       - docker.env
@@ -53,7 +52,6 @@ services:
       - database
     ports:
       - 8081:80
-    restart: always
     environment:
       - PMA_ARBITRARY=1
       - PMA_PORT=3306
