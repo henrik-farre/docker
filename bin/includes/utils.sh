@@ -8,7 +8,7 @@ function msg_warning {
 }
 
 function msg_error {
-  echo -e "\e[00;31m${1}\e[00m"
+  echo -e "\e[00;31m${1}\e[00m" 1>&2;
 }
 
 function msg_debug {
@@ -17,7 +17,12 @@ function msg_debug {
 
 function docker-get-running-container-name() {
   local CONTAINER
-  CONTAINER=$(docker inspect --format '{{ .Name }}' $(docker ps -q | head -1))
+  RUNNING_CONTAINERS=$(docker ps -q | head -1)
+  if [[ -z ${RUNNING_CONTAINERS} ]]; then
+    msg_error "No running containers, please start one"
+    return 1
+  fi
+  CONTAINER=$(docker inspect --format '{{ .Name }}' ${RUNNING_CONTAINERS})
   echo "${CONTAINER#/}"
 }
 
@@ -135,12 +140,12 @@ function site-create() {
   SITE_TYPE=${2:-}
   if [[ -d "$SITE_DIR/$SITE_NAME" ]]; then
     msg_error "$SITE_DIR/$SITE_NAME exists"
-    exit 1
+    return 1
   fi
 
   if [[ -f "$VHOST_DIR/${SITE_NAME}.conf" ]]; then
     msg_error "$VHOST_DIR/${SITE_NAME}.conf exists"
-    exit 1
+    return 1
   fi
 
   # If no site type is set, we just create an empty public_html
@@ -385,4 +390,35 @@ function blackfire-curl() {
   URL=$1
   source "${CONTAINER_DIR}/docker.env"
   docker run -it --rm -e BLACKFIRE_CLIENT_ID="${BLACKFIRE_CLIENT_ID}" -e BLACKFIRE_CLIENT_TOKEN="${BLACKFIRE_CLIENT_TOKEN}" blackfire/blackfire blackfire curl "$URL"
+}
+
+# Based on http://stackoverflow.com/questions/6928946/mysterious-lineno-in-bash-trap-err
+function err-handler() {
+  local LASTERR
+  local LASTLINE
+  local LINECALLFUNC
+  local LASTCOMMAND
+  local FUNCSTACK
+
+  LASTERR=$1
+  LASTLINE=$2
+  LINECALLFUNC=$3
+  LASTCOMMAND=$4
+  FUNCSTACK=$5
+
+  echo "ERROR: line $LASTLINE - command '$LASTCOMMAND' exited with status: $LASTERR"
+  if [ "$FUNCSTACK" != "::" ]; then
+    echo "Error at ${FUNCSTACK} "
+    if [ "$LINECALLFUNC" != "" ]; then
+      echo "called at line $LINECALLFUNC"
+    fi
+  else
+    echo "internal debug info from function ${FUNCNAME} (line $LINECALLFUNC)"
+  fi
+
+  exit ${LASTERR}
+}
+
+function err-handler-setup() {
+  trap 'err-handler "$?" "$LINENO" "$BASH_LINENO" "$BASH_COMMAND" $(printf "::%s" ${FUNCNAME[@]})'  ERR
 }

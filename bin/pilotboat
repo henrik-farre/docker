@@ -1,7 +1,9 @@
 #!/bin/bash
 set -o nounset
+set -o errtrace
 set -o errexit
 set -o pipefail
+# set -o xtrace
 IFS=$'\n\t'
 
 source "${BASH_SOURCE%/*}/includes/utils.sh"
@@ -22,6 +24,8 @@ if [[ -z "$ACTION" ]]; then
   usage
   exit 1
 fi
+
+err-handler-setup
 
 case "$ACTION" in
   export)
