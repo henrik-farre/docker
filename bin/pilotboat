@@ -67,6 +67,17 @@ case "$ACTION" in
 
     docker-exec-in-container "$CONTAINER_NAME" db-import "$DATABASE_NAME"
     ;;
+  db-drop)
+    DATABASE_NAME=${2:-}
+    if [[ -z "$DATABASE_NAME" ]]; then
+      msg_error "db-drop requires an database name"
+      exit 1
+    fi
+
+    CONTAINER_NAME=$(docker-get-running-container-name)
+
+    docker-exec-in-container "$CONTAINER_NAME" db-drop "$DATABASE_NAME"
+    ;;
   webserver-reload)
     webserver-reload
     ;;
