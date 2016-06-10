@@ -25,6 +25,7 @@ RUN echo "tzdata tzdata/Areas select Europe" | debconf-set-selections \
 # Update and install
 # Python and graphviz for webgrind
 # ca-certificates else curl will fail on https
+# Git is needed for some composer dependencies
 RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
  && apt-get -q -y --no-install-recommends install \
       mariadb-client \
@@ -47,6 +48,7 @@ RUN apt-get -q -y update && apt-get -q -y --no-install-recommends upgrade \
       imagemagick \
       python \
       graphviz \
+      git \
  && apt-get clean \
  && rm -rf /var/lib/{apt,dpkg,cache,log}/ /tmp/* /var/tmp/* /var/cache/debconf/* \
  && rm -rf /usr/share/man/?? /usr/share/man/??_* \
